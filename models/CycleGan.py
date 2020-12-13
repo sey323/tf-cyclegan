@@ -330,6 +330,7 @@ class Application:
         }
 
     def create(self, source, target, save_folder, epoch, drop_prob=1):
+        print(self.y_fake)
         trg2src_image, src2trg_image = self.sess.run(
             [self.x_fake, self.y_fake],
             feed_dict={self.source: source, self.target: target},

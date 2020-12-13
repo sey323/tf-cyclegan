@@ -38,7 +38,8 @@ def main(argv):
         save_path = save_path + "/" + FLAGS.save_folder
     else:
         save_path = FLAGS.save_folder
-
+    
+    print("[LOADING]\tTraining data")
     # 画像の読み込み
     source_images, target_images, _ = imload.makeAB(
         folderA, folderB, gray=gray, img_size=resize
@@ -101,12 +102,12 @@ if __name__ == "__main__":
     flags.DEFINE_boolean("gray", True, "濃淡画像に変換するかどうか")
 
     # GANの学習パラメータ
-    flags.DEFINE_float("identity_loss_penalty", 10, "identity lossの重み")
-    flags.DEFINE_float("cycle_loss_penalty", 10, "cycle lossの重み")
     flags.DEFINE_integer("batch_size", 64, "ミニバッチサイズ")
     flags.DEFINE_float("learn_rate", 0.002, "学習率")
     flags.DEFINE_integer("max_epoch", 100, "学習Epoch数")
     flags.DEFINE_float("drop_prob", 0.5, "ドロップアウトの確率")
+    flags.DEFINE_float("identity_loss_penalty", 10, "identity lossの重み")
+    flags.DEFINE_float("cycle_loss_penalty", 10, "cycle lossの重み")
 
     # 保存フォルダの指定
     flags.DEFINE_string("save_folder", "", "学習結果を保存するパス")
