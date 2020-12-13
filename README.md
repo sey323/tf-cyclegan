@@ -1,6 +1,13 @@
 # tf-gan
 tensorflowでcycle-gan
 
+## 初期設定
+依存ライブラリを追加する。
+
+```
+$ pip install -r requirements.txt
+```
+
 ## 学習
 CylceGanによる学習は以下のコマンドで実行する。
 
