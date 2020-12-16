@@ -100,5 +100,9 @@ ENV/
 # mypy
 .mypy_cache/
 
-results/*
+dataset
+logs
+results
+.DS_Store
 *.png
+
