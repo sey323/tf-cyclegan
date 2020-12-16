@@ -293,7 +293,7 @@ class Application:
 
     def update(self, source_images, target_images):
         # update generator
-        for i in range(2):
+        for i in range(4):
             _, _, g_loss_g, g_loss_f, summary = self.sess.run(
                 [
                     self.g_optimizer,
@@ -330,7 +330,6 @@ class Application:
         }
 
     def create(self, source, target, save_folder, epoch, drop_prob=1):
-        print(self.y_fake)
         trg2src_image, src2trg_image = self.sess.run(
             [self.x_fake, self.y_fake],
             feed_dict={self.source: source, self.target: target},
@@ -442,6 +441,47 @@ class Application:
             print(file_name + " Not found")
             exit()
 
+    def calculation(
+        self, source, fake, target, save_folder, file_names=None, channel=3,
+    ):
+        """Calculation
+        生成画像と正解画像を比較して損失を計算する。計算した画像ごとの損失関数はsave_folder/calc_loss.txtに保存される。
+
+        Args:
+            source ():
+                入力画像
+            fake ():
+                生成された画像
+            target ():
+                正解画像
+            save_folder (String):
+                生成された画像を保存するフォルダ名
+            file_names (String):
+                画像のファイル名のリスト。こちらがNone出ない時、保存する画像にファイル名が付与される。
+            channel (int):
+                生成する画像のチャンネル
+        """
+
+        os.makedirs(os.path.join(save_folder, "fake"))
+        os.makedirs(os.path.join(save_folder, "target"))
+        for idx, _ in enumerate(fake):
+            if file_names is None:
+                file_name = idx
+            else:  # ファイル名を撮ってくる
+                file_name = file_names[idx][:-4]
+            cv2.imwrite(
+                os.path.join(
+                    save_folder, "fake", "{}.png".format(file_name)
+                ),
+                fake[idx] * 255.0
+            )
+            cv2.imwrite(
+                os.path.join(
+                    save_folder, "target", "{}.png".format(file_name)
+                ),
+                target[idx] * 255.0
+            )
+
     def freeze(self, frozen_graph_path, as_text=False):
         """
         学習したモデルと重み情報を.pbファイルに保存し永続化する。
@@ -453,6 +493,12 @@ class Application:
                 Text形式で保存する時: True, バイナリ形式で保存する時: False
         """
         # パラメータの固定
-        tf.io.write_graph(
-            self.sess.graph_def, frozen_graph_path, "graph.pb", as_text=as_text
-        )
+        # tf.io.write_graph(
+        #     self.sess.graph_def, frozen_graph_path, "graph.pb", as_text=as_text
+        # )
+        builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(os.path.join(frozen_graph_path, "saved_model"))
+        signature = tf.compat.v1.saved_model.predict_signature_def(inputs={'input': self.source}, outputs={'output': self.y_fake})
+        builder.add_meta_graph_and_variables(sess=self.sess,
+                                            tags=[tf.compat.v1.saved_model.tag_constants.SERVING],
+                                            signature_def_map={'convert_g': signature})
+        builder.save()
