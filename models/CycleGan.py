@@ -361,11 +361,30 @@ class Application:
             file_names : [str]
                 入力画像に対応するファイル名の配列
         """
-        fake = self.sess.run(self.y_fake, feed_dict={self.source: source})
-        self.calculation(
-            source, fake, target, save_folder=self.save_folder, file_names=file_names
-        )
+        save_folder = self.save_folder
+        fake_images = self.sess.run(self.y_fake, feed_dict={self.source: source})
 
+        os.makedirs(os.path.join(save_folder, "fake"))
+        os.makedirs(os.path.join(save_folder, "target"))
+        for idx, _ in enumerate(fake_images):
+            if file_names is None:
+                file_name = idx
+            else:  # ファイル名を撮ってくる
+                file_name = file_names[idx][:-4]
+                logging.info("Processing :{}".format(file_name))
+            cv2.imwrite(
+                os.path.join(
+                    save_folder, "fake", "{}.png".format(file_name)
+                ),
+                cv2.resize(fake_images[idx] * 255.0, (1936,1216))
+            )
+            cv2.imwrite(
+                os.path.join(
+                    save_folder, "target", "{}.png".format(file_name)
+                ),
+                cv2.resize(target[idx] * 255.0, (1936,1216))
+            )
+            
     def init_session(self):
         """
         TFセッションの初期化
@@ -440,47 +459,6 @@ class Application:
         else:
             print(file_name + " Not found")
             exit()
-
-    def calculation(
-        self, source, fake, target, save_folder, file_names=None, channel=3,
-    ):
-        """Calculation
-        生成画像と正解画像を比較して損失を計算する。計算した画像ごとの損失関数はsave_folder/calc_loss.txtに保存される。
-
-        Args:
-            source ():
-                入力画像
-            fake ():
-                生成された画像
-            target ():
-                正解画像
-            save_folder (String):
-                生成された画像を保存するフォルダ名
-            file_names (String):
-                画像のファイル名のリスト。こちらがNone出ない時、保存する画像にファイル名が付与される。
-            channel (int):
-                生成する画像のチャンネル
-        """
-
-        os.makedirs(os.path.join(save_folder, "fake"))
-        os.makedirs(os.path.join(save_folder, "target"))
-        for idx, _ in enumerate(fake):
-            if file_names is None:
-                file_name = idx
-            else:  # ファイル名を撮ってくる
-                file_name = file_names[idx][:-4]
-            cv2.imwrite(
-                os.path.join(
-                    save_folder, "fake", "{}.png".format(file_name)
-                ),
-                cv2.resize(fake[idx] * 255.0, (1936,1216))
-            )
-            cv2.imwrite(
-                os.path.join(
-                    save_folder, "target", "{}.png".format(file_name)
-                ),
-                cv2.resize(target[idx] * 255.0, (1936,1216))
-            )
 
     def freeze(self, frozen_graph_path, as_text=False):
         """
