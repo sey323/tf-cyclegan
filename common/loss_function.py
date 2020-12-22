@@ -373,9 +373,9 @@ def style_loss(fake_features, y_faetures, name=""):
     """
     Neural Style Transferの手法より、スタイル損失を計算する。
     Args
-        fake_features (tensor[]):
+        fake_features (tensor):
             生成画像のスタイル特徴量のリスト
-        y_faetures (tensor[]):
+        y_faetures (tensor):
             正解画像のスタイル特徴量のリスト
         name (str):
             モジュールの名前

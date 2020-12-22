@@ -44,13 +44,12 @@ def main(argv):
     # モデルの復元
     model.restore(model_path)
 
-    # モデルの評価
-    if mode == "eval":
+    if mode == "eval": # モデルの評価
         source_images, target_images, file_names = imload.makeAB(
             folderA, folderB, img_size=resize, gray=gray
         )
         model.eval(source_images, target_images, file_names=file_names)
-    elif mode == "freeze":
+    elif mode == "freeze": # モデルの永続保存
         model.freeze(model.save_folder)
 
 

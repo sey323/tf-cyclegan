@@ -67,8 +67,8 @@ class Application:
         self.gpu_config = tf.compat.v1.ConfigProto(gpu_options=gpu_config)
 
     def build_model(self):
-        """
-        モデルの生成
+        """モデルの定義
+        学習に用いる計算グラフを定義する
         """
         # 変数の定義
         self.source = tf.compat.v1.placeholder(
@@ -279,8 +279,7 @@ class Application:
             ],
         )
 
-        """Tensorboadに保存する設定"""
-        logging.info("[BUILDING]\tSAVE Node")
+        # Tensorboadに保存する設定
         # パラメータの記録．
         tf.compat.v1.summary.scalar("g_loss_g", self.g_loss_g)
         tf.compat.v1.summary.scalar("g_loss_f", self.g_loss_f)
@@ -292,21 +291,19 @@ class Application:
         tf.compat.v1.summary.scalar("cycleloss_src", cycleloss_src)
 
     def update(self, source_images, target_images):
-        # update generator
-        for i in range(4):
-            _, _, g_loss_g, g_loss_f, summary = self.sess.run(
-                [
-                    self.g_optimizer,
-                    self.f_optimizer,
-                    self.g_loss_g,
-                    self.g_loss_f,
-                    self.summary,
-                ],
-                feed_dict={
-                    self.source: source_images,
-                    self.target: target_images,
-                },
-            )
+        _, _, g_loss_g, g_loss_f, summary = self.sess.run(
+            [
+                self.g_optimizer,
+                self.f_optimizer,
+                self.g_loss_g,
+                self.g_loss_f,
+                self.summary,
+            ],
+            feed_dict={
+                self.source: source_images,
+                self.target: target_images,
+            },
+        )
 
         _, _, d_loss_x, d_loss_y, summary = self.sess.run(
             [
@@ -354,11 +351,12 @@ class Application:
     def eval(self, source, target, file_names=None):
         """
         モデルの評価
-        Parameters
-        ---
-            source : tensor
-            target : tensor
-            file_names : [str]
+        Args:
+            source ():
+                変換元となる画像
+            target (): 
+                変換先の正解画像
+            file_names ([str]): 
                 入力画像に対応するファイル名の配列
         """
         save_folder = self.save_folder
@@ -427,7 +425,7 @@ class Application:
         学習結果を保存する
 
         Args:
-            prefix (String):
+            prefix (str):
                 保存するモデルに付与するPrefix
         """
         self.saver.save(self.sess, os.path.join(self.save_folder, "model.ckpt"), prefix)
@@ -437,7 +435,7 @@ class Application:
         checkpointファイルからモデルを復元する。
 
         Args:
-            file_name (String):
+            file_name (str):
                 読み込むモデルのパス
         """
         self.build_model()
@@ -457,7 +455,7 @@ class Application:
             exit()
 
     def freeze(self, frozen_graph_path, as_text=False):
-        """
+        """モデルの永続保存
         学習したモデルと重み情報を.pbファイルに保存し永続化する。
 
         Args:
@@ -466,10 +464,6 @@ class Application:
             as_text (bool):
                 Text形式で保存する時: True, バイナリ形式で保存する時: False
         """
-        # パラメータの固定
-        # tf.io.write_graph(
-        #     self.sess.graph_def, frozen_graph_path, "graph.pb", as_text=as_text
-        # )
         builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(
             os.path.join(frozen_graph_path, "saved_model")
         )
