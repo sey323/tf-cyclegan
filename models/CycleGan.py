@@ -473,13 +473,13 @@ class Application:
                 os.path.join(
                     save_folder, "fake", "{}.png".format(file_name)
                 ),
-                fake[idx] * 255.0
+                cv2.resize(fake[idx] * 255.0, (1936,1216))
             )
             cv2.imwrite(
                 os.path.join(
                     save_folder, "target", "{}.png".format(file_name)
                 ),
-                target[idx] * 255.0
+                cv2.resize(target[idx] * 255.0, (1936,1216))
             )
 
     def freeze(self, frozen_graph_path, as_text=False):
