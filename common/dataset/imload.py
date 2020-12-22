@@ -31,7 +31,7 @@ def _load_image(file_name, img_size=None, gray=True, is_norm=True) -> np.ndarray
     if img_size is not None:  # 画像のリサイズ
         image = cv2.resize(image, (img_size[0], img_size[1]))
         channel = 1 if gray else 3
-        image = image.reshape(img_size[0], img_size[1], channel)
+        # image = image.reshape(img_size[0], img_size[1], channel)
 
     if is_norm:  # 画像を0-1の範囲に正規化
         image = image.astype(np.float32) / 255.0
