@@ -41,3 +41,13 @@ $ python train.py --folderA=${学習するSource画像のパス} \
 | cycle_loss_penalty | cycle lossの重み | 10 |
 | identity_loss_penalty | identity lossの重み | 10 |
 
+
+## 評価
+
+
+```
+$ python eval_saved_model.py --folder=${生成したい画像の入力となる画像のフォルダ} \
+                             --model_path=${SavedModel形式の学習済み重み}
+```
+
+
