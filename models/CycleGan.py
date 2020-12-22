@@ -186,7 +186,7 @@ class Application:
         cycleloss_trg = loss_function.cycle_constancy(
             self.y_fake, self.target, alpha=10
         )
-        total_cycle_loss = (cycleloss_src + cycleloss_trg) 
+        total_cycle_loss = cycleloss_src + cycleloss_trg
 
         # G(x)：Src->Trgの損失関数
         identityloss_trg = loss_function.l1(self.target, self.y_same)
@@ -373,18 +373,14 @@ class Application:
                 file_name = file_names[idx][:-4]
                 logging.info("Processing :{}".format(file_name))
             cv2.imwrite(
-                os.path.join(
-                    save_folder, "fake", "{}.png".format(file_name)
-                ),
-                cv2.resize(fake_images[idx] * 255.0, (1936,1216))
+                os.path.join(save_folder, "fake", "{}.png".format(file_name)),
+                cv2.resize(fake_images[idx] * 255.0, (1936, 1216)),
             )
             cv2.imwrite(
-                os.path.join(
-                    save_folder, "target", "{}.png".format(file_name)
-                ),
-                cv2.resize(target[idx] * 255.0, (1936,1216))
+                os.path.join(save_folder, "target", "{}.png".format(file_name)),
+                cv2.resize(target[idx] * 255.0, (1936, 1216)),
             )
-            
+
     def init_session(self):
         """
         TFセッションの初期化
@@ -474,9 +470,15 @@ class Application:
         # tf.io.write_graph(
         #     self.sess.graph_def, frozen_graph_path, "graph.pb", as_text=as_text
         # )
-        builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(os.path.join(frozen_graph_path, "saved_model"))
-        signature = tf.compat.v1.saved_model.predict_signature_def(inputs={'input': self.source}, outputs={'output': self.y_fake})
-        builder.add_meta_graph_and_variables(sess=self.sess,
-                                            tags=[tf.compat.v1.saved_model.tag_constants.SERVING],
-                                            signature_def_map={'convert_g': signature})
+        builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(
+            os.path.join(frozen_graph_path, "saved_model")
+        )
+        signature = tf.compat.v1.saved_model.predict_signature_def(
+            inputs={"input": self.source}, outputs={"output": self.y_fake}
+        )
+        builder.add_meta_graph_and_variables(
+            sess=self.sess,
+            tags=[tf.compat.v1.saved_model.tag_constants.SERVING],
+            signature_def_map={"convert_g": signature},
+        )
         builder.save()

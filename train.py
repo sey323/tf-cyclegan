@@ -38,7 +38,7 @@ def main(argv):
         save_path = save_path + "/" + FLAGS.save_folder
     else:
         save_path = FLAGS.save_folder
-    
+
     print("[LOADING]\tTraining data")
     # 画像の読み込み
     source_images, target_images, _ = imload.makeAB(
@@ -86,7 +86,9 @@ def main(argv):
     trainer.train(model, source, target, var_source, var_target)
 
     # モデルの永続保存
-    model.freeze(model.save_folder,)
+    model.freeze(
+        model.save_folder,
+    )
 
 
 if __name__ == "__main__":
