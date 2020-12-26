@@ -101,7 +101,7 @@ if __name__ == "__main__":
     flags.DEFINE_string("folderB_test", "", "テスト用Target画像のパス")
 
     flags.DEFINE_integer("resize", 64, "モデルに入力する画像の1辺のサイズ")
-    flags.DEFINE_boolean("gray", True, "濃淡画像に変換するかどうか")
+    flags.DEFINE_boolean("gray", False, "濃淡画像に変換するかどうか")
 
     # GANの学習パラメータ
     flags.DEFINE_integer("batch_size", 64, "ミニバッチサイズ")

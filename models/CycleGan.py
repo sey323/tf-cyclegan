@@ -181,10 +181,10 @@ class Application:
         # Generatorの損失関数
         # Gxの損失関数
         cycleloss_src = loss_function.cycle_constancy(
-            self.x_fake, self.source, alpha=10
+            self.y_cycled, self.source, alpha=10
         )
         cycleloss_trg = loss_function.cycle_constancy(
-            self.y_fake, self.target, alpha=10
+            self.x_cycled, self.target, alpha=10
         )
         total_cycle_loss = cycleloss_src + cycleloss_trg
 
