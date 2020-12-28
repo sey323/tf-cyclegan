@@ -186,7 +186,7 @@ class Application:
         cycleloss_trg = loss_function.cycle_constancy(
             self.x_cycled, self.target, alpha=10
         )
-        total_cycle_loss = (cycleloss_src + cycleloss_trg) 
+        total_cycle_loss = (cycleloss_src + cycleloss_trg) * self.cycle_loss_penalty
 
         # G(x)：Src->Trgの損失関数
         identityloss_trg = loss_function.l1(self.target, self.y_same)
@@ -196,7 +196,6 @@ class Application:
                 labels=tf.ones_like(self.fake_y_dy),
                 name="d_loss_src2trg",
             )
-            + total_cycle_loss * self.cycle_loss_penalty
             + identityloss_trg * self.identity_loss_penalty  # identity_loss
         )
 
@@ -208,9 +207,9 @@ class Application:
                 labels=tf.ones_like(self.fake_x_dx),
                 name="d_loss_src2trg",
             )
-            + total_cycle_loss * self.cycle_loss_penalty
             + identityloss_src * self.identity_loss_penalty  # identity_loss
         )
+        self.g_loss = (self.g_loss_f + self.g_loss_g) + total_cycle_loss
 
         # D(x)：Srcの損失関数
         d_loss_real_x = loss_function.cross_entropy(
@@ -223,7 +222,7 @@ class Application:
             labels=tf.zeros_like(self.fake_x_dx),
             name="d_loss_fake_x",
         )  # 本物の画像を本物と識別する損失関数
-        self.d_loss_x = d_loss_fake_x + d_loss_real_x
+        self.d_loss_x = (d_loss_fake_x + d_loss_real_x) / 2
 
         # D(y)：Trgの損失関数
         d_loss_real_y = loss_function.cross_entropy(
@@ -236,7 +235,8 @@ class Application:
             labels=tf.zeros_like(self.fake_y_dy),
             name="d_loss_fake_y",
         )  # 本物の画像を本物と識別する損失関数
-        self.d_loss_y = d_loss_fake_y + d_loss_real_y
+        self.d_loss_y = (d_loss_fake_y + d_loss_real_y) / 2
+        self.d_loss = self.d_loss_y + self.d_loss_x
 
         # 最適化関数の定義
         logging.info("[BUILDING]\tOptimizer")
@@ -244,38 +244,20 @@ class Application:
         self.g_optimizer = tf.compat.v1.train.AdamOptimizer(
             self.learn_rate, beta1=0.5
         ).minimize(
-            self.g_loss_g,
+            self.g_loss,
             var_list=[
-                x for x in tf.compat.v1.trainable_variables() if "Generator_G" in x.name
-            ],
-        )
-        self.f_optimizer = tf.compat.v1.train.AdamOptimizer(
-            self.learn_rate, beta1=0.5
-        ).minimize(
-            self.g_loss_f,
-            var_list=[
-                x for x in tf.compat.v1.trainable_variables() if "Generator_F" in x.name
+                x for x in tf.compat.v1.trainable_variables() if "Generator" in x.name
             ],
         )
 
-        self.dx_optimizer = tf.compat.v1.train.AdamOptimizer(
+        self.d_optimizer = tf.compat.v1.train.AdamOptimizer(
             self.learn_rate, beta1=0.5
         ).minimize(
-            self.d_loss_x,
+            self.d_loss,
             var_list=[
                 x
                 for x in tf.compat.v1.trainable_variables()
-                if "Discriminator_Dx" in x.name
-            ],
-        )
-        self.dy_optimizer = tf.compat.v1.train.AdamOptimizer(
-            self.learn_rate, beta1=0.5
-        ).minimize(
-            self.d_loss_y,
-            var_list=[
-                x
-                for x in tf.compat.v1.trainable_variables()
-                if "Discriminator_Dy" in x.name
+                if "Discriminator" in x.name
             ],
         )
 
@@ -283,23 +265,22 @@ class Application:
         logging.info("[BUILDING]\tSAVE Node")
         # パラメータの記録．
         tf.compat.v1.summary.scalar("g_loss_g", self.g_loss_g)
-        tf.compat.v1.summary.scalar("g_loss_f", self.g_loss_f)
+        tf.compat.v1.summary.scalar("d_loss_y", self.d_loss_y)
+        tf.compat.v1.summary.scalar("g_loss", self.g_loss)
         tf.compat.v1.summary.scalar("d_loss_x", self.d_loss_x)
         tf.compat.v1.summary.scalar("d_loss_y", self.d_loss_y)
+        tf.compat.v1.summary.scalar("d_loss", self.d_loss)
         tf.compat.v1.summary.scalar("identityloss_src", identityloss_src)
         tf.compat.v1.summary.scalar("identityloss_trg", identityloss_trg)
         tf.compat.v1.summary.scalar("cycleloss_trg", cycleloss_trg)
         tf.compat.v1.summary.scalar("cycleloss_src", cycleloss_src)
 
     def update(self, source_images, target_images):
-        # update generator
-        for i in range(4):
-            _, _, g_loss_g, g_loss_f, summary = self.sess.run(
+        for i in range(2):
+            _, g_loss, summary = self.sess.run(
                 [
                     self.g_optimizer,
-                    self.f_optimizer,
-                    self.g_loss_g,
-                    self.g_loss_f,
+                    self.g_loss,
                     self.summary,
                 ],
                 feed_dict={
@@ -308,12 +289,10 @@ class Application:
                 },
             )
 
-        _, _, d_loss_x, d_loss_y, summary = self.sess.run(
+        _, d_loss, summary = self.sess.run(
             [
-                self.dx_optimizer,
-                self.dy_optimizer,
-                self.d_loss_x,
-                self.d_loss_y,
+                self.d_optimizer,
+                self.d_loss,
                 self.summary,
             ],
             feed_dict={
@@ -321,11 +300,10 @@ class Application:
                 self.target: target_images,
             },
         )
+
         return {
-            "g_loss": g_loss_g,
-            "g_loss_f": g_loss_f,
-            "d_loss_x": d_loss_x,
-            "d_loss": d_loss_y,
+            "g_loss": g_loss,
+            "d_loss": d_loss,
             "summary": summary,
         }
 
@@ -442,7 +420,13 @@ class Application:
             exit()
 
     def calculation(
-        self, source, fake, target, save_folder, file_names=None, channel=3,
+        self,
+        source,
+        fake,
+        target,
+        save_folder,
+        file_names=None,
+        channel=3,
     ):
         """Calculation
         生成画像と正解画像を比較して損失を計算する。計算した画像ごとの損失関数はsave_folder/calc_loss.txtに保存される。
@@ -470,16 +454,12 @@ class Application:
             else:  # ファイル名を撮ってくる
                 file_name = file_names[idx][:-4]
             cv2.imwrite(
-                os.path.join(
-                    save_folder, "fake", "{}.png".format(file_name)
-                ),
-                fake[idx] * 255.0
+                os.path.join(save_folder, "fake", "{}.png".format(file_name)),
+                fake[idx] * 255.0,
             )
             cv2.imwrite(
-                os.path.join(
-                    save_folder, "target", "{}.png".format(file_name)
-                ),
-                target[idx] * 255.0
+                os.path.join(save_folder, "target", "{}.png".format(file_name)),
+                target[idx] * 255.0,
             )
 
     def freeze(self, frozen_graph_path, as_text=False):
@@ -496,9 +476,15 @@ class Application:
         # tf.io.write_graph(
         #     self.sess.graph_def, frozen_graph_path, "graph.pb", as_text=as_text
         # )
-        builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(os.path.join(frozen_graph_path, "saved_model"))
-        signature = tf.compat.v1.saved_model.predict_signature_def(inputs={'input': self.source}, outputs={'output': self.y_fake})
-        builder.add_meta_graph_and_variables(sess=self.sess,
-                                            tags=[tf.compat.v1.saved_model.tag_constants.SERVING],
-                                            signature_def_map={'convert_g': signature})
+        builder = tf.compat.v1.saved_model.builder.SavedModelBuilder(
+            os.path.join(frozen_graph_path, "saved_model")
+        )
+        signature = tf.compat.v1.saved_model.predict_signature_def(
+            inputs={"input": self.source}, outputs={"output": self.y_fake}
+        )
+        builder.add_meta_graph_and_variables(
+            sess=self.sess,
+            tags=[tf.compat.v1.saved_model.tag_constants.SERVING],
+            signature_def_map={"convert_g": signature},
+        )
         builder.save()
