@@ -15,6 +15,7 @@ import logging
 # ログレベルを WARN に変更
 logging.basicConfig(level=logging.WARNING)
 
+
 def main(argv):
     img_path = os.getenv("DATASET_FOLDER", "dataset")
     save_path = os.getenv("SAVE_FOLDER", "results")
@@ -24,7 +25,6 @@ def main(argv):
     folderB = FLAGS.folderB
     model_path = FLAGS.model_path
     mode = FLAGS.mode
-
 
     # JSONからデータの読み込み
     with open(model_path + "/param.json") as param_json:
@@ -45,13 +45,14 @@ def main(argv):
     model.restore(model_path)
 
     # モデルの評価
-    if mode == "eval": 
+    if mode == "eval":
         source_images, target_images, file_names = imload.makeAB(
             folderA, folderB, img_size=resize, gray=gray
         )
         model.eval(source_images, target_images, file_names=file_names)
     elif mode == "freeze":
         model.freeze(model.save_folder)
+
 
 if __name__ == "__main__":
     FLAGS = flags.FLAGS
